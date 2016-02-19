@@ -1,0 +1,12 @@
+<resources>
+    <declare-styleable name="GraphView">
+        <attr name="numReadings" format="integer"/>
+        <attr name="graphColor" format="color"/>
+        <attr name="lineColor" format="color"/>
+        <attr name="max" format="float"/>
+        <attr name="min" format="float"/>
+        <attr name="units" format="string"/>
+        <attr name="lineSpacing" format="float"/>
+        <attr name="label" format="string"/>
+    </declare-styleable>
+</resources>

@@ -1,0 +1,43 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             xmlns:tools="http://schemas.android.com/tools"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             tools:context="org.masonapps.autoapp.sections.DTCFragment">
+
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:id="@+id/buttonBar"
+        style="?attr/buttonBarStyle">
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:padding="12dp"
+            android:text="Fetch Trouble Codes"
+            style="?attr/buttonBarButtonStyle"
+            android:id="@+id/fectchCodesButton"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:padding="12dp"
+            android:text="Clear Trouble Codes"
+            style="?attr/buttonBarButtonStyle"
+            android:id="@+id/clearCodesButton"/>
+    </LinearLayout>
+
+    <android.support.v7.widget.RecyclerView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_alignParentBottom="true"
+        android:clipToPadding="false"
+        android:paddingBottom="58dp"
+        android:id="@+id/troubleCodeRecyclerView"
+        android:layout_below="@id/buttonBar"/>
+</RelativeLayout>

@@ -1,0 +1,39 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:orientation="vertical"
+              tools:context="org.masonapps.autoapp.sections.GraphDataFragment">
+
+    <org.masonapps.autoapp.views.GraphView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="10dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginBottom="58dp"
+        android:id="@+id/voltageGraph"
+        app:graphColor="@color/colorAccent"
+        app:lineColor="@color/graphLineColor"
+        app:max="18"
+        app:min="0"
+        app:units="V"
+        app:lineSpacing="3"
+        app:numReadings="75"
+        app:label="Voltmeter"/>
+
+    <!--<org.masonapps.autoapp.views.GraphView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="0dp"-->
+        <!--android:padding="10dp"-->
+        <!--android:id="@+id/rpmGraph"-->
+        <!--android:layout_weight="0.5"-->
+        <!--app:graphColor="@color/graphColor2"-->
+        <!--app:lineColor="@color/graphLineColor"-->
+        <!--app:max="10000"-->
+        <!--app:min="0"-->
+        <!--app:units="RPM"-->
+        <!--app:lineSpacing="1000"-->
+        <!--app:numReadings="40"-->
+        <!--app:label="Tachometer"/>-->
+</RelativeLayout>

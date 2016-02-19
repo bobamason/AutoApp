@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_vehicles"
+            android:icon="@android:drawable/ic_menu_sort_by_size"
+            android:title="My Cars"/>
+        <item
+            android:id="@+id/nav_raw"
+            android:icon="@android:drawable/ic_menu_send"
+            android:title="Raw Data"/>
+        <item
+            android:id="@+id/nav_dtc"
+            android:icon="@android:drawable/stat_notify_error"
+            android:title="Trouble Codes"/>
+        <item
+            android:id="@+id/nav_voltage"
+            android:icon="@android:drawable/ic_lock_idle_low_battery"
+            android:title="Voltage"/>
+    </group>
+
+    <!--<item android:title="Communicate">-->
+        <!--<menu>-->
+            <!--<item-->
+                <!--android:id="@+id/nav_share"-->
+                <!--android:icon="@android:drawable/ic_menu_share"-->
+                <!--android:title="Share"/>-->
+            <!--<item-->
+                <!--android:id="@+id/nav_send"-->
+                <!--android:icon="@android:drawable/ic_menu_send"-->
+                <!--android:title="Send"/>-->
+        <!--</menu>-->
+    <!--</item>-->
+
+</menu>
