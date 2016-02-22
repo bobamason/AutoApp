@@ -128,7 +128,7 @@ public class GraphView extends View {
     private void invalidateMeasurements() {
         step = graphBounds.width() / (float) (numReadings - 1);
 //        graphStrokeWidth = step * 0.8f;
-        graphStrokeWidth = density * 3f;
+        graphStrokeWidth = density * 2f;
         graphPaint.setStrokeWidth(graphStrokeWidth);
         graphPaint.setStrokeMiter(graphStrokeWidth / 2f);
         final float valRange = max - min;

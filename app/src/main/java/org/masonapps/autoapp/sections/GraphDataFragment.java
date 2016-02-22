@@ -66,7 +66,7 @@ public class GraphDataFragment extends Fragment {
         voltageTimer = new Timer();
 //        rpmTimer = new Timer();
         voltageTask = new CommandTask("ATRV");
-        voltageTimer.schedule(voltageTask, 0, 100);
+        voltageTimer.schedule(voltageTask, 500, 120);
 //        rpmTask = new CommandTask("01 0C");
 //        rpmTimer.schedule(rpmTask, 0);
     }
