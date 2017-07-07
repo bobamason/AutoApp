@@ -9,4 +9,7 @@
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="trouble_codes">Trouble Codes</string>
+    <string name="raw_data">Raw Data</string>
+    <string name="voltage">Voltage</string>
 </resources>

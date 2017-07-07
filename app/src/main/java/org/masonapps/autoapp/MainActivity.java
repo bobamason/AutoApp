@@ -7,7 +7,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.Fragment;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -20,34 +19,26 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.masonapps.autoapp.bluetooth.BluetoothActivity;
-import org.masonapps.autoapp.database.AutoDatabase;
-import org.masonapps.autoapp.database.AutoEntry;
-import org.masonapps.autoapp.sections.AddVehicleFragment;
 import org.masonapps.autoapp.sections.DTCFragment;
 import org.masonapps.autoapp.sections.GraphDataFragment;
 import org.masonapps.autoapp.sections.RawDataFragment;
-import org.masonapps.autoapp.sections.VehicleListFragment;
-
-import java.lang.ref.WeakReference;
 
 public class MainActivity extends BluetoothActivity
-        implements NavigationView.OnNavigationItemSelectedListener, AddVehicleFragment.OnVehicleAddedListener, VehicleListFragment.OnVehicleInteractionListener {
+        implements NavigationView.OnNavigationItemSelectedListener {
 
     public static final int FAB_COLOR_DISCONNECTED = Color.GRAY;
-    private static final String VEHICLE_LIST_TAG = "vehicleList";
-    private StringBuffer stringBuffer = new StringBuffer();
-    private int index;
-    private ProgressBar progressBar;
     private static final int COMMAND_NONE = -1;
     private static final int COMMAND_ECHO_OFF = 0;
     private static final int COMMAND_INFO = 1;
     private static final int COMMAND_AUTO_PROTOCOL = 2;
+    private StringBuffer stringBuffer = new StringBuffer();
+    private int index;
+    private ProgressBar progressBar;
     private int currentCommand = COMMAND_NONE;
     private boolean confirmed = false;
     private FloatingActionButton fab;
     private Drawable disconnectedDrawable;
     private Drawable connectedDrawable;
-    private AutoDatabase database;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +46,6 @@ public class MainActivity extends BluetoothActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        database = new AutoDatabase(this);
 
         progressBar = (ProgressBar) findViewById(R.id.progressIndicator);
 
@@ -96,12 +86,7 @@ public class MainActivity extends BluetoothActivity
 
     @Override
     protected void onPause() {
-        database.close();
         super.onPause();
-    }
-    
-    public WeakReference<AutoDatabase> getDatabaseWeakReference(){
-        return new WeakReference<>(database);
     }
 
     private void displayDisconnectDialog() {
@@ -209,17 +194,6 @@ public class MainActivity extends BluetoothActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_add_vehicle) {
-            new AddVehicleFragment().show(getSupportFragmentManager(), null);
-            return true;
-        }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -231,9 +205,6 @@ public class MainActivity extends BluetoothActivity
         if (id == R.id.nav_raw) {
             getSupportFragmentManager().beginTransaction().replace(R.id.container, new RawDataFragment()).commit();
             setTitle("Raw Data");
-        } else if (id == R.id.nav_vehicles) {
-            getSupportFragmentManager().beginTransaction().replace(R.id.container, new VehicleListFragment(), VEHICLE_LIST_TAG).commit();
-            setTitle("Vehicles");
         } else if (id == R.id.nav_dtc) {
             getSupportFragmentManager().beginTransaction().replace(R.id.container, new DTCFragment()).commit();
             setTitle("Trouble Codes");
@@ -253,26 +224,5 @@ public class MainActivity extends BluetoothActivity
 
     public boolean isConfirmed() {
         return confirmed;
-    }
-
-    @Override
-    public void vehicleAdded(AutoEntry entry) {
-        Fragment fragment = getSupportFragmentManager().findFragmentByTag(VEHICLE_LIST_TAG);
-        if(fragment != null && fragment instanceof VehicleListFragment){
-            ((VehicleListFragment)fragment).notifyVehicleAdded(entry);
-        }
-    }
-
-    @Override
-    public void onDeleteClicked(AutoEntry entry) {
-        database.deleteEntry(entry);
-    }
-
-    @Override
-    public void onEditClicked(AutoEntry entry) {
-    }
-
-    @Override
-    public void onSetClicked(AutoEntry entry) {
     }
 }
