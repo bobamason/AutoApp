@@ -4,10 +4,10 @@ package org.masonapps.autoapp.sections;
 import android.app.Activity;
 import android.app.SearchManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.app.AlertDialog;
@@ -17,6 +17,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,22 +40,24 @@ public class DTCFragment extends Fragment {
     private TroubleCodeAdapter adapter;
     private int currentCommand = COMMAND_NONE;
     private boolean connected = false;
+    private Button fetchButton;
+    private Button clearButton;
     private final BluetoothActivity.OnBluetoothEventListener listener = new BluetoothActivity.OnBluetoothEventListener() {
         @Override
         public void onReadLine(String line) {
-            switch (currentCommand){
+            switch (currentCommand) {
                 case COMMAND_NONE:
                     break;
                 case COMMAND_FETCH:
                     hideProgressBar();
                     try {
-                        if (adapter != null){
+                        if (adapter != null) {
                             adapter.addAll(ODB2Parser.parseTroubleCodes(line));
                         }
-                    } catch (IllegalArgumentException e){
+                    } catch (IllegalArgumentException e) {
                         e.printStackTrace();
                         final Activity activity = getActivity();
-                        if(activity != null)
+                        if (activity != null)
                             Toast.makeText(activity.getApplicationContext(), "unable to read response: " + line, Toast.LENGTH_SHORT).show();
                     }
                     currentCommand = COMMAND_NONE;
@@ -65,11 +68,15 @@ public class DTCFragment extends Fragment {
         @Override
         public void onConnected() {
             connected = true;
+            fetchButton.setEnabled(true);
+            clearButton.setEnabled(true);
         }
 
         @Override
         public void onDisconnected() {
             connected = false;
+            fetchButton.setEnabled(false);
+            clearButton.setEnabled(false);
         }
     };
 
@@ -79,50 +86,40 @@ public class DTCFragment extends Fragment {
 
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_dtc, container, false);
-        
-        view.findViewById(R.id.fectchCodesButton).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(connected) {
+
+        fetchButton = view.findViewById(R.id.fectchCodesButton);
+        fetchButton.setOnClickListener(v -> {
+            if (connected) {
+                if (getActivity() != null) {
                     ((MainActivity) getActivity()).sendCommand("03");
                     currentCommand = COMMAND_FETCH;
                     showProgressBar();
                 }
             }
         });
-        
-        view.findViewById(R.id.clearCodesButton).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(connected) {
-                    new AlertDialog.Builder(getActivity())
-                            .setTitle("Are you sure?")
-                            .setIcon(android.R.drawable.stat_sys_warning)
-                            .setMessage("All trouble codes will be permanently erased.")
-                            .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    dialog.dismiss();
-                                }
-                            })
-                            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    clearTroubleCodes();
-                                    dialog.dismiss();
-                                }
-                            })
-                            .create().show();
-                }
+
+        clearButton = view.findViewById(R.id.clearCodesButton);
+        clearButton.setOnClickListener(v -> {
+            if (connected && getActivity() != null) {
+                new AlertDialog.Builder(getActivity())
+                        .setTitle("Are you sure?")
+                        .setIcon(android.R.drawable.stat_sys_warning)
+                        .setMessage("All trouble codes will be permanently erased.")
+                        .setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.dismiss())
+                        .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                            clearTroubleCodes();
+                            dialog.dismiss();
+                        })
+                        .create().show();
             }
         });
-        
-        final RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.troubleCodeRecyclerView);
+
+        final RecyclerView recyclerView = view.findViewById(R.id.troubleCodeRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        adapter = new TroubleCodeAdapter(new ArrayList<String>());
+        adapter = new TroubleCodeAdapter(new ArrayList<>());
         recyclerView.setAdapter(adapter);
 //        recyclerView.setHasFixedSize(false);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
@@ -130,8 +127,11 @@ public class DTCFragment extends Fragment {
     }
 
     private void clearTroubleCodes() {
-        boolean sent = ((MainActivity) getActivity()).sendCommand("04");
-        if(sent) {
+        boolean sent = false;
+        if (getActivity() != null) {
+            sent = ((MainActivity) getActivity()).sendCommand("04");
+        }
+        if (sent) {
             adapter.clear();
             Toast.makeText(getActivity().getApplicationContext(), "diagnostic trouble codes cleared", Toast.LENGTH_SHORT).show();
         }
@@ -139,29 +139,32 @@ public class DTCFragment extends Fragment {
 
     private void hideProgressBar() {
         final MainActivity activity = (MainActivity) getActivity();
-        if(activity != null) activity.setProgressVisibility(false);
+        if (activity != null) activity.setProgressVisibility(false);
     }
 
     private void showProgressBar() {
         final MainActivity activity = (MainActivity) getActivity();
-        if(activity != null) activity.setProgressVisibility(true);
+        if (activity != null) activity.setProgressVisibility(true);
     }
 
     @Override
     public void onResume() {
         super.onResume();
         final MainActivity activity = (MainActivity) getActivity();
-        connected = activity.isConfirmed();
-        activity.addOnBluetoothEventListener(listener);
+        if (activity != null) {
+            connected = activity.isConfirmed();
+            activity.addOnBluetoothEventListener(listener);
+        }
     }
 
     @Override
     public void onPause() {
-        ((MainActivity) getActivity()).removeOnBluetoothEventListener(listener);
+        if (getActivity() != null)
+            ((MainActivity) getActivity()).removeOnBluetoothEventListener(listener);
         super.onPause();
     }
 
-    public static class TroubleCodeAdapter extends RecyclerView.Adapter<TroubleCodeAdapter.TroubleCodeViewHolder>{
+    public static class TroubleCodeAdapter extends RecyclerView.Adapter<TroubleCodeAdapter.TroubleCodeViewHolder> {
 
         private final ArrayList<String> codes;
 
@@ -183,27 +186,40 @@ public class DTCFragment extends Fragment {
         public void onBindViewHolder(TroubleCodeAdapter.TroubleCodeViewHolder holder, int position) {
             holder.bind(codes.get(position));
         }
-        
-        public void addAll(ArrayList<String> list){
+
+        public void addAll(ArrayList<String> list) {
             int start = codes.size();
             codes.addAll(list);
             notifyItemRangeInserted(start, list.size());
         }
-        
-        public void add(String code){
+
+        public void add(String code) {
             int pos = codes.size();
             codes.add(code);
             notifyItemInserted(pos);
         }
-        
-        public void clear(){
+
+        public void clear() {
             codes.clear();
             notifyDataSetChanged();
         }
 
-        public static class TroubleCodeViewHolder extends RecyclerView.ViewHolder{
+        public static class TroubleCodeViewHolder extends RecyclerView.ViewHolder {
 
             private final TextView textView;
+            private View.OnClickListener onSearchClickedListener = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    final Context context = v.getContext();
+                    final Intent intent = new Intent(Intent.ACTION_WEB_SEARCH);
+                    intent.putExtra(SearchManager.QUERY, "diagnostic trouble code " + textView.getText().toString());
+                    if (intent.resolveActivity(context.getPackageManager()) != null) {
+                        context.startActivity(intent);
+                    } else {
+                        Toast.makeText(context.getApplicationContext(), "unable to perform web search", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            };
 
             public TroubleCodeViewHolder(View itemView) {
                 super(itemView);
@@ -213,24 +229,10 @@ public class DTCFragment extends Fragment {
                 DrawableCompat.setTint(drawable.mutate(), itemView.getContext().getResources().getColor(R.color.colorAccent));
                 searchButton.setOnClickListener(onSearchClickedListener);
             }
-            
-            public void bind(String text){
+
+            public void bind(String text) {
                 textView.setText(text);
             }
-            
-            private View.OnClickListener onSearchClickedListener = new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    final Context context = v.getContext();
-                    final Intent intent = new Intent(Intent.ACTION_WEB_SEARCH);
-                    intent.putExtra(SearchManager.QUERY, "diagnostic trouble code " + textView.getText().toString());
-                    if(intent.resolveActivity(context.getPackageManager()) != null) {
-                        context.startActivity(intent);
-                    } else {
-                        Toast.makeText(context.getApplicationContext(), "unable to perform web search", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            };
         }
     }
 }

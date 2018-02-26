@@ -5,12 +5,15 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,6 +22,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.masonapps.autoapp.bluetooth.BluetoothActivity;
+import org.masonapps.autoapp.sections.BTConnectionFragment;
 import org.masonapps.autoapp.sections.DTCFragment;
 import org.masonapps.autoapp.sections.GraphDataFragment;
 import org.masonapps.autoapp.sections.RawDataFragment;
@@ -27,14 +31,13 @@ public class MainActivity extends BluetoothActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     public static final int FAB_COLOR_DISCONNECTED = Color.GRAY;
-    private static final int COMMAND_NONE = -1;
-    private static final int COMMAND_ECHO_OFF = 0;
-    private static final int COMMAND_INFO = 1;
-    private static final int COMMAND_AUTO_PROTOCOL = 2;
+    private static final String COMMAND_INFO = "I";
+    private static final String COMMAND_ECHO_OFF = "E0";
+    private static final String COMMAND_AUTO_PROTOCOL = "SP 0";
     private StringBuffer stringBuffer = new StringBuffer();
-    private int index;
     private ProgressBar progressBar;
-    private int currentCommand = COMMAND_NONE;
+    @Nullable
+    private String currentCommand = null;
     private boolean confirmed = false;
     private FloatingActionButton fab;
     private Drawable disconnectedDrawable;
@@ -44,41 +47,46 @@ public class MainActivity extends BluetoothActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        progressBar = (ProgressBar) findViewById(R.id.progressIndicator);
+        progressBar = findViewById(R.id.progressIndicator);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        if(savedInstanceState == null) {
-            showRawDataFragment();
-            setTitle("Raw Data");
-        }
 
+        if (savedInstanceState == null)
+            showDTCFragment();
+
+//        if(isConnected())
+//            showDTCFragment();
+//        else
+//            showBTConnectionFragment();
+
+        setUpFAB();
+    }
+
+    private void setUpFAB() {
         disconnectedDrawable = DrawableCompat.wrap(getResources().getDrawable(R.drawable.ic_bluetooth_disabled));
         DrawableCompat.setTint(disconnectedDrawable, Color.LTGRAY);
         connectedDrawable = getResources().getDrawable(R.drawable.ic_bluetooth);
-        fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab = findViewById(R.id.fab);
         fab.setImageDrawable(disconnectedDrawable);
         fab.setBackgroundTintList(ColorStateList.valueOf(FAB_COLOR_DISCONNECTED));
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(isConnected()){
-                    displayDisconnectDialog();
+        fab.setOnClickListener(v -> {
+            if (isConnected()) {
+                displayDisconnectDialog();
+            } else {
+                if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
+                    displayDeviceListDialog();
                 } else {
-                    if(BluetoothAdapter.getDefaultAdapter().isEnabled()){
-                        displayDeviceListDialog();
-                    } else {
-                        requestEnableBluetooth();
-                    }
+                    requestEnableBluetooth();
                 }
             }
         });
@@ -90,23 +98,45 @@ public class MainActivity extends BluetoothActivity
     }
 
     private void displayDisconnectDialog() {
-        
+        new AlertDialog.Builder(this)
+                .setPositiveButton(android.R.string.yes, (dialog, which) -> {
+
+                })
+                .setNegativeButton(android.R.string.no, (dialog, which) -> dialog.dismiss())
+                .setTitle("Disconnect")
+                .setMessage("Are you sure you want to disconnect from the current device?")
+                .create()
+                .show();
     }
 
     private void showRawDataFragment() {
         getSupportFragmentManager().beginTransaction().replace(R.id.container, new RawDataFragment()).commit();
+        setTitle(R.string.raw_data);
+    }
+
+    private void showDTCFragment() {
+        getSupportFragmentManager().beginTransaction().replace(R.id.container, new DTCFragment()).commit();
+        setTitle(R.string.trouble_codes);
+    }
+
+    private void showBTConnectionFragment() {
+        getSupportFragmentManager().beginTransaction().replace(R.id.container, new BTConnectionFragment()).commit();
+        setTitle(R.string.connect_bt);
     }
 
     public boolean sendATCommand(String command) {
-        return write("AT" + command + "\r\n");
+        final boolean success = write("AT" + command + "\r\n");
+        if (success)
+            currentCommand = command;
+        return success;
     }
 
     @Override
     public void connected() {
         fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
         fab.setImageDrawable(connectedDrawable);
-        sendATCommand("I");
-        currentCommand = COMMAND_INFO;
+        showDTCFragment();
+        sendATCommand(COMMAND_INFO);
     }
 
     @Override
@@ -121,6 +151,7 @@ public class MainActivity extends BluetoothActivity
         setProgressVisibility(true);
         fab.setBackgroundTintList(ColorStateList.valueOf(FAB_COLOR_DISCONNECTED));
         fab.setImageDrawable(disconnectedDrawable);
+        showBTConnectionFragment();
         attemptToConnect();
         for (OnBluetoothEventListener listener : listeners) {
             listener.onDisconnected();
@@ -135,49 +166,51 @@ public class MainActivity extends BluetoothActivity
     @Override
     public void onRead(String line) {
         stringBuffer.append(line);
-        String out = "";
+        StringBuilder out = new StringBuilder();
+
+        int index;
         while ((index = stringBuffer.indexOf(">")) != -1) {
-            out += stringBuffer.substring(0, index) + "\n";
+            out.append(stringBuffer.substring(0, index)).append("\n");
             stringBuffer.delete(0, index + 1);
         }
-        if (!out.isEmpty()) {
+        if (out.length() > 0) {
+            final String s = out.toString().toUpperCase();
             if (confirmed) {
-                if (currentCommand == COMMAND_ECHO_OFF) {
-                    if (out.toUpperCase().contains("OK")) {
+                if (currentCommand != null && currentCommand.equals(COMMAND_ECHO_OFF)) {
+                    if (s.contains("OK")) {
                         Toast.makeText(getApplicationContext(), "echo disabled", Toast.LENGTH_SHORT).show();
-                        sendATCommand("SP 0");
-                        currentCommand = COMMAND_AUTO_PROTOCOL;
+                        sendATCommand(COMMAND_AUTO_PROTOCOL);
                     }
-                } else if (currentCommand == COMMAND_AUTO_PROTOCOL) {
-                    if (out.toUpperCase().contains("OK")) {
-                        currentCommand = COMMAND_NONE;
+                } else if (currentCommand != null && currentCommand.equals(COMMAND_AUTO_PROTOCOL)) {
+                    if (s.contains("OK")) {
+                        currentCommand = null;
                         Toast.makeText(getApplicationContext(), "auto ODB2 protocol set", Toast.LENGTH_SHORT).show();
                         setProgressVisibility(false);
                         for (OnBluetoothEventListener listener : listeners) {
                             listener.onConnected();
                         }
                     }
-                } else if (currentCommand == COMMAND_NONE) {
+                } else {
                     for (OnBluetoothEventListener listener : listeners) {
-                        listener.onReadLine(out);
+                        listener.onReadLine(out.toString());
                     }
                 }
             } else {
-                if (currentCommand == COMMAND_INFO) {
-                    if (out.toUpperCase().contains("ELM32")) {
+                if (currentCommand != null && currentCommand.equals(COMMAND_INFO)) {
+                    if (s.contains("ELM32")) {
                         confirmed = true;
                         Toast.makeText(getApplicationContext(), "device compatibility confirmed", Toast.LENGTH_SHORT).show();
-                        currentCommand = COMMAND_ECHO_OFF;
-                        sendATCommand("E0");
+                        sendATCommand(COMMAND_ECHO_OFF);
                     }
                 }
             }
+            currentCommand = null;
         }
     }
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
@@ -198,22 +231,22 @@ public class MainActivity extends BluetoothActivity
     }
 
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
         if (id == R.id.nav_raw) {
             getSupportFragmentManager().beginTransaction().replace(R.id.container, new RawDataFragment()).commit();
-            setTitle("Raw Data");
+            setTitle(getString(R.string.raw_data));
         } else if (id == R.id.nav_dtc) {
             getSupportFragmentManager().beginTransaction().replace(R.id.container, new DTCFragment()).commit();
-            setTitle("Trouble Codes");
+            setTitle(getString(R.string.trouble_codes));
         } else if (id == R.id.nav_voltage) {
             getSupportFragmentManager().beginTransaction().replace(R.id.container, new GraphDataFragment()).commit();
-            setTitle("Voltage");
+            setTitle(getString(R.string.voltage));
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }

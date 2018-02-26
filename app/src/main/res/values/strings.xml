@@ -12,4 +12,5 @@
     <string name="trouble_codes">Trouble Codes</string>
     <string name="raw_data">Raw Data</string>
     <string name="voltage">Voltage</string>
+    <string name="connect_bt">Connect to ODB2 Device</string>
 </resources>

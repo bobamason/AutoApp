@@ -33,6 +33,7 @@ public class BluetoothService extends Service{
     public static final int MESSAGE_UNREG_CLIENT = 105;
     public static final int MESSAGE_SET_DEVICE = 106;
     public static final int MESSAGE_CONNECT = 107;
+    public static final int MESSAGE_DISCONNECT = 108;
     public static final int STATE_NONE = 1;
     public static final int STATE_CONNECTING = 2;
     public static final int STATE_CONNECTED = 3;
@@ -157,6 +158,9 @@ public class BluetoothService extends Service{
                     break;
                 case BluetoothService.MESSAGE_CONNECT:
                     connect();
+                    break;
+                case BluetoothService.MESSAGE_DISCONNECT:
+                    stop();
                     break;
                 case BluetoothService.MESSAGE_STATE_CHANGE:
                     for (int i = clients.size() - 1; i >= 0; i--) {
