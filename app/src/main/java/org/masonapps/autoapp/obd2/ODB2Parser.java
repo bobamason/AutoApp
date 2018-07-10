@@ -1,4 +1,4 @@
-package org.masonapps.autoapp;
+package org.masonapps.autoapp.obd2;
 
 import java.util.ArrayList;
 

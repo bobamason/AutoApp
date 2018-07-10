@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -23,9 +24,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.masonapps.autoapp.MainActivity;
-import org.masonapps.autoapp.ODB2Parser;
 import org.masonapps.autoapp.R;
 import org.masonapps.autoapp.bluetooth.BluetoothActivity;
+import org.masonapps.autoapp.obd2.ODB2Parser;
 
 import java.util.ArrayList;
 
@@ -138,28 +139,30 @@ public class DTCFragment extends Fragment {
     }
 
     private void hideProgressBar() {
-        final MainActivity activity = (MainActivity) getActivity();
-        if (activity != null) activity.setProgressVisibility(false);
+        final FragmentActivity activity = getActivity();
+        if (activity instanceof MainActivity)
+            ((MainActivity) activity).setProgressVisibility(false);
     }
 
     private void showProgressBar() {
-        final MainActivity activity = (MainActivity) getActivity();
-        if (activity != null) activity.setProgressVisibility(true);
+        final FragmentActivity activity = getActivity();
+        if (activity instanceof MainActivity)
+            ((MainActivity) activity).setProgressVisibility(true);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        final MainActivity activity = (MainActivity) getActivity();
-        if (activity != null) {
-            connected = activity.isConfirmed();
-            activity.addOnBluetoothEventListener(listener);
+        final FragmentActivity activity = getActivity();
+        if (activity instanceof MainActivity) {
+            connected = ((MainActivity) activity).isDeviceCompatible();
+            ((MainActivity) activity).addOnBluetoothEventListener(listener);
         }
     }
 
     @Override
     public void onPause() {
-        if (getActivity() != null)
+        if (getActivity() instanceof MainActivity)
             ((MainActivity) getActivity()).removeOnBluetoothEventListener(listener);
         super.onPause();
     }

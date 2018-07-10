@@ -1,15 +1,10 @@
 package org.masonapps.autoapp;
 
-import android.bluetooth.BluetoothAdapter;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -22,6 +17,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.masonapps.autoapp.bluetooth.BluetoothActivity;
+import org.masonapps.autoapp.obd2.ELM32X;
 import org.masonapps.autoapp.sections.BTConnectionFragment;
 import org.masonapps.autoapp.sections.DTCFragment;
 import org.masonapps.autoapp.sections.GraphDataFragment;
@@ -30,18 +26,12 @@ import org.masonapps.autoapp.sections.RawDataFragment;
 public class MainActivity extends BluetoothActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    public static final int FAB_COLOR_DISCONNECTED = Color.GRAY;
-    private static final String COMMAND_INFO = "I";
-    private static final String COMMAND_ECHO_OFF = "E0";
-    private static final String COMMAND_AUTO_PROTOCOL = "SP 0";
+    private static final String KEY_DEVICE_ADDRESS = "deviceAddress";
     private StringBuffer stringBuffer = new StringBuffer();
     private ProgressBar progressBar;
     @Nullable
     private String currentCommand = null;
-    private boolean confirmed = false;
-    private FloatingActionButton fab;
-    private Drawable disconnectedDrawable;
-    private Drawable connectedDrawable;
+    private boolean isDeviceCompatible = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,35 +51,12 @@ public class MainActivity extends BluetoothActivity
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        if (savedInstanceState == null)
-            showDTCFragment();
-
-//        if(isConnected())
-//            showDTCFragment();
-//        else
-//            showBTConnectionFragment();
-
-        setUpFAB();
-    }
-
-    private void setUpFAB() {
-        disconnectedDrawable = DrawableCompat.wrap(getResources().getDrawable(R.drawable.ic_bluetooth_disabled));
-        DrawableCompat.setTint(disconnectedDrawable, Color.LTGRAY);
-        connectedDrawable = getResources().getDrawable(R.drawable.ic_bluetooth);
-        fab = findViewById(R.id.fab);
-        fab.setImageDrawable(disconnectedDrawable);
-        fab.setBackgroundTintList(ColorStateList.valueOf(FAB_COLOR_DISCONNECTED));
-        fab.setOnClickListener(v -> {
-            if (isConnected()) {
-                displayDisconnectDialog();
-            } else {
-                if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
-                    displayDeviceListDialog();
-                } else {
-                    requestEnableBluetooth();
-                }
-            }
-        });
+        if (isConnected()) {
+            if (savedInstanceState == null)
+                showDTCFragment();
+        } else {
+            showBTConnectionFragment();
+        }
     }
 
     @Override
@@ -133,24 +100,17 @@ public class MainActivity extends BluetoothActivity
 
     @Override
     public void connected() {
-        fab.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
-        fab.setImageDrawable(connectedDrawable);
         showDTCFragment();
-        sendATCommand(COMMAND_INFO);
+        sendATCommand(ELM32X.COMMAND_INFO);
     }
 
     @Override
     public void connecting() {
         setProgressVisibility(true);
-        fab.setBackgroundTintList(ColorStateList.valueOf(FAB_COLOR_DISCONNECTED));
-        fab.setImageDrawable(disconnectedDrawable);
     }
 
     @Override
     public void disconnected() {
-        setProgressVisibility(true);
-        fab.setBackgroundTintList(ColorStateList.valueOf(FAB_COLOR_DISCONNECTED));
-        fab.setImageDrawable(disconnectedDrawable);
         showBTConnectionFragment();
         attemptToConnect();
         for (OnBluetoothEventListener listener : listeners) {
@@ -159,7 +119,7 @@ public class MainActivity extends BluetoothActivity
     }
 
     public void setProgressVisibility(boolean visible) {
-        if(progressBar != null)
+        if (progressBar != null)
             progressBar.setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
@@ -175,13 +135,13 @@ public class MainActivity extends BluetoothActivity
         }
         if (out.length() > 0) {
             final String s = out.toString().toUpperCase();
-            if (confirmed) {
-                if (currentCommand != null && currentCommand.equals(COMMAND_ECHO_OFF)) {
+            if (isDeviceCompatible) {
+                if (currentCommand != null && currentCommand.equals(ELM32X.COMMAND_ECHO_OFF)) {
                     if (s.contains("OK")) {
                         Toast.makeText(getApplicationContext(), "echo disabled", Toast.LENGTH_SHORT).show();
-                        sendATCommand(COMMAND_AUTO_PROTOCOL);
+                        sendATCommand(ELM32X.COMMAND_AUTO_PROTOCOL);
                     }
-                } else if (currentCommand != null && currentCommand.equals(COMMAND_AUTO_PROTOCOL)) {
+                } else if (currentCommand != null && currentCommand.equals(ELM32X.COMMAND_AUTO_PROTOCOL)) {
                     if (s.contains("OK")) {
                         currentCommand = null;
                         Toast.makeText(getApplicationContext(), "auto ODB2 protocol set", Toast.LENGTH_SHORT).show();
@@ -196,15 +156,22 @@ public class MainActivity extends BluetoothActivity
                     }
                 }
             } else {
-                if (currentCommand != null && currentCommand.equals(COMMAND_INFO)) {
-                    if (s.contains("ELM32")) {
-                        confirmed = true;
-                        Toast.makeText(getApplicationContext(), "device compatibility confirmed", Toast.LENGTH_SHORT).show();
-                        sendATCommand(COMMAND_ECHO_OFF);
+                if (currentCommand != null && currentCommand.equals(ELM32X.COMMAND_INFO)) {
+                    if (ELM32X.checkInfoResponseCompatibility(s)) {
+                        onCompatibilityConfirmed();
                     }
                 }
             }
             currentCommand = null;
+        }
+    }
+
+    private void onCompatibilityConfirmed() {
+        isDeviceCompatible = true;
+        Toast.makeText(getApplicationContext(), "device compatibility confirmed", Toast.LENGTH_SHORT).show();
+        sendATCommand(ELM32X.COMMAND_ECHO_OFF);
+        if (getCurrentBtDevice() != null) {
+            PreferenceManager.getDefaultSharedPreferences(this).edit().putString(KEY_DEVICE_ADDRESS, getCurrentBtDevice().getAddress()).apply();
         }
     }
 
@@ -227,6 +194,10 @@ public class MainActivity extends BluetoothActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.disconnect && isConnected()) {
+            displayDisconnectDialog();
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -255,7 +226,7 @@ public class MainActivity extends BluetoothActivity
         return write(s + "\r\n");
     }
 
-    public boolean isConfirmed() {
-        return confirmed;
+    public boolean isDeviceCompatible() {
+        return isDeviceCompatible;
     }
 }

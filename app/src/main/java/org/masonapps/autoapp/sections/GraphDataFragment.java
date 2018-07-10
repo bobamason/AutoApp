@@ -96,7 +96,7 @@ public class GraphDataFragment extends Fragment {
     public void onResume() {
         super.onResume();
         final MainActivity activity = (MainActivity) getActivity();
-        connected = activity.isConfirmed();
+        connected = activity.isDeviceCompatible();
         activity.addOnBluetoothEventListener(listener);
         if(connected) startCommunication();
     }

@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu
-    >
-    <!--<item android:id="@+id/action"-->
-    <!--android:title="Title"-->
-    <!--android:orderInCategory="1"-->
-    <!--app:showAsAction="always"-->
-    <!--android:icon="@drawable/ic_"/>-->
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/disconnect"
+        android:orderInCategory="99"
+        android:title="@string/disconnect_bt"
+        app:showAsAction="never"/>
 </menu>

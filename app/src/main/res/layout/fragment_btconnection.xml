@@ -4,5 +4,11 @@
              android:layout_height="match_parent"
              tools:context="org.masonapps.autoapp.sections.BTConnectionFragment">
 
+    <Button
+        android:id="@+id/connect_bt_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="@string/connect_bt"/>
 
 </FrameLayout>

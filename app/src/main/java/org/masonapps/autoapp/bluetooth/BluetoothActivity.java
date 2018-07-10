@@ -14,6 +14,7 @@ import android.os.Messenger;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -57,6 +58,8 @@ public abstract class BluetoothActivity extends AppCompatActivity {
             btService = null;
         }
     };
+    @Nullable
+    private BluetoothDevice currentBtDevice = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState, PersistableBundle persistentState) {
@@ -123,7 +126,7 @@ public abstract class BluetoothActivity extends AppCompatActivity {
         for (int i = 0; i < devices.size(); i++) {
             deviceNames[i] = devices.get(i).getName();
         }
-        if (devices.size() > 0) setDevice(0);
+        if (devices.size() > 0) setCurrentBtDevice(0);
         SelectDeviceDialog.newInstance(deviceNames, 0).show(getSupportFragmentManager(), DEVICE_LIST_TAG);
     }
 
@@ -143,10 +146,21 @@ public abstract class BluetoothActivity extends AppCompatActivity {
         return isConnected;
     }
 
-    public void setDevice(int which) {
+    public void setCurrentBtDevice(int index) {
+        if (index > 0 && index < devices.size())
+            setCurrentBtDevice(devices.get(index));
+    }
+
+    @Nullable
+    public BluetoothDevice getCurrentBtDevice() {
+        return currentBtDevice;
+    }
+
+    public void setCurrentBtDevice(BluetoothDevice device) {
+        currentBtDevice = device;
         if (serviceBound) {
             try {
-                btService.send(Message.obtain(null, BluetoothService.MESSAGE_SET_DEVICE, devices.get(which)));
+                btService.send(Message.obtain(null, BluetoothService.MESSAGE_SET_DEVICE, currentBtDevice));
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -260,7 +274,7 @@ public abstract class BluetoothActivity extends AppCompatActivity {
                     .setPositiveButton(android.R.string.ok, (dialog, which) -> activity.attemptToConnect());
             final Bundle arguments = getArguments();
             if (arguments != null) {
-                builder.setSingleChoiceItems(arguments.getStringArray(DEVICE_NAMES_KEY), arguments.getInt(POSITION_KEY), (dialog, which) -> activity.setDevice(which));
+                builder.setSingleChoiceItems(arguments.getStringArray(DEVICE_NAMES_KEY), arguments.getInt(POSITION_KEY), (dialog, which) -> activity.setCurrentBtDevice(which));
             }
             return builder.create();
         }
