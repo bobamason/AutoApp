@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -43,8 +44,23 @@ public class BluetoothService extends Service{
     private int state;
     private Messenger messenger = new Messenger(new IncomingHandler());
     private ArrayList<Messenger> clients = new ArrayList<>();
+    @Nullable
     private BluetoothDevice device = null;
     private BluetoothAdapter bluetoothAdapter;
+
+
+    @Nullable
+    public static BluetoothDevice getPairedDeviceByAddress(String address) {
+        if (BluetoothAdapter.checkBluetoothAddress(address)) {
+            final Set<BluetoothDevice> devices = BluetoothAdapter.getDefaultAdapter().getBondedDevices();
+            for (BluetoothDevice device : devices) {
+                if (device.getAddress().equalsIgnoreCase(address)) {
+                    return device;
+                }
+            }
+        }
+        return null;
+    }
 
     @Override
     public void onCreate() {
@@ -76,6 +92,7 @@ public class BluetoothService extends Service{
             communicationThread.cancel();
             communicationThread = null;
         }
+        if (device == null) return;
         connectThread = new ConnectThread();
         connectThread.start();
     }

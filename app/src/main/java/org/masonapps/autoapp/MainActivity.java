@@ -1,9 +1,13 @@
 package org.masonapps.autoapp;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -17,8 +21,8 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.masonapps.autoapp.bluetooth.BluetoothActivity;
+import org.masonapps.autoapp.bluetooth.BluetoothService;
 import org.masonapps.autoapp.obd2.ELM32X;
-import org.masonapps.autoapp.sections.BTConnectionFragment;
 import org.masonapps.autoapp.sections.DTCFragment;
 import org.masonapps.autoapp.sections.GraphDataFragment;
 import org.masonapps.autoapp.sections.RawDataFragment;
@@ -32,6 +36,8 @@ public class MainActivity extends BluetoothActivity
     @Nullable
     private String currentCommand = null;
     private boolean isDeviceCompatible = false;
+    private FloatingActionButton connectButton;
+    private Drawable disconnectedDrawable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,12 +57,33 @@ public class MainActivity extends BluetoothActivity
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        connectButton = findViewById(R.id.fab);
+        connectButton.setOnClickListener(v -> {
+            if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
+                connectToODB2Adapter();
+            } else {
+                requestEnableBluetooth();
+            }
+        });
+        disconnectedDrawable = getResources().getDrawable(R.drawable.ic_bluetooth_disabled, getTheme());
+        disconnectedDrawable = getResources().getDrawable(R.drawable.ic_bluetooth_disabled, getTheme());
+
         if (isConnected()) {
+            hideConnectButton();
             if (savedInstanceState == null)
                 showDTCFragment();
         } else {
-            showBTConnectionFragment();
+            showConnectButton();
         }
+    }
+
+    private void connectToODB2Adapter() {
+        final String savedAddress = PreferenceManager.getDefaultSharedPreferences(this).getString(KEY_DEVICE_ADDRESS, "");
+        final BluetoothDevice savedDevice = BluetoothService.getPairedDeviceByAddress(savedAddress);
+        if (savedDevice != null) {
+            setCurrentBtDevice(savedDevice);
+        } else
+            displayDeviceListDialog();
     }
 
     @Override
@@ -86,10 +113,10 @@ public class MainActivity extends BluetoothActivity
         setTitle(R.string.trouble_codes);
     }
 
-    private void showBTConnectionFragment() {
-        getSupportFragmentManager().beginTransaction().replace(R.id.container, new BTConnectionFragment()).commit();
-        setTitle(R.string.connect_bt);
-    }
+//    private void showBTConnectionFragment() {
+//        getSupportFragmentManager().beginTransaction().replace(R.id.container, new BTConnectionFragment()).commit();
+//        setTitle(R.string.connect_bt);
+//    }
 
     public boolean sendATCommand(String command) {
         final boolean success = write("AT" + command + "\r\n");
@@ -111,11 +138,20 @@ public class MainActivity extends BluetoothActivity
 
     @Override
     public void disconnected() {
-        showBTConnectionFragment();
+        showConnectButton();
         attemptToConnect();
         for (OnBluetoothEventListener listener : listeners) {
             listener.onDisconnected();
         }
+    }
+
+    private void showConnectButton() {
+        connectButton.setVisibility(View.VISIBLE);
+        connectButton.setImageDrawable(disconnectedDrawable);
+    }
+
+    private void hideConnectButton() {
+        connectButton.setVisibility(View.GONE);
     }
 
     public void setProgressVisibility(boolean visible) {
@@ -159,6 +195,10 @@ public class MainActivity extends BluetoothActivity
                 if (currentCommand != null && currentCommand.equals(ELM32X.COMMAND_INFO)) {
                     if (ELM32X.checkInfoResponseCompatibility(s)) {
                         onCompatibilityConfirmed();
+                    } else {
+                        showConnectButton();
+                        setCurrentBtDevice(null);
+                        // TODO: 7/12/2018 disconnect 
                     }
                 }
             }
@@ -168,6 +208,7 @@ public class MainActivity extends BluetoothActivity
 
     private void onCompatibilityConfirmed() {
         isDeviceCompatible = true;
+        hideConnectButton();
         Toast.makeText(getApplicationContext(), "device compatibility confirmed", Toast.LENGTH_SHORT).show();
         sendATCommand(ELM32X.COMMAND_ECHO_OFF);
         if (getCurrentBtDevice() != null) {

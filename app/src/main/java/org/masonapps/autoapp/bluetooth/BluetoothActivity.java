@@ -45,7 +45,6 @@ public abstract class BluetoothActivity extends AppCompatActivity {
                 msg.replyTo = incomingMessenger;
                 btService.send(msg);
                 serviceBound = true;
-                displayDeviceListDialog();
             } catch (RemoteException e) {
                 e.printStackTrace();
             }

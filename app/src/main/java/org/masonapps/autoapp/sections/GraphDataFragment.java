@@ -2,6 +2,7 @@ package org.masonapps.autoapp.sections;
 
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,35 +19,24 @@ import java.util.TimerTask;
 public class GraphDataFragment extends Fragment {
 
 
-    private GraphView voltageGraph;
-//    private GraphView rpmGraph;
+    private Timer timer;
+    private CommandTask task;
+    private GraphView graphView;
     private boolean connected = false;
-    private float voltage = 0f;
-    private float rpm = 0f;
     
     private final BluetoothActivity.OnBluetoothEventListener listener = new BluetoothActivity.OnBluetoothEventListener() {
         @Override
         public void onReadLine(String line) {
-            if(line.toUpperCase().contains("V")){
+            if (line.toUpperCase().contains("0C")) {
                 try{
-                    voltage = Float.parseFloat(line.substring(0, line.indexOf("V")));
-                    voltageGraph.updateValue(voltage);
-                    if(voltage > voltageGraph.getMax()){
-                        voltageGraph.setMax(voltageGraph.getMax() + 3f);
+                    line = line.replaceAll("\\s", "");
+                    if (line.length() > 4) {
+                        final int value = Math.round(Integer.parseInt(line.substring(line.length() - 4), 16) / 4f);
+                        graphView.updateValue(value);
                     }
                 }catch (NumberFormatException ignored){}
-//                rpmTimer.schedule(rpmTask, 20);
+                timer.schedule(task, 50);
             }
-//            else if(line.toUpperCase().contains("0C")){
-//                try{
-//                    line = line.replaceAll("\\s", "");
-//                    if(line.length() > 4) {
-//                        rpm = Math.round(Integer.parseInt(line.substring(line.length() - 4), 16) / 4f);
-//                        rpmGraph.updateValue(rpm);
-//                    }
-//                }catch (NumberFormatException ignored){}
-//                voltageTimer.schedule(voltageTask, 50);
-//            }
         }
 
         @Override
@@ -63,18 +53,10 @@ public class GraphDataFragment extends Fragment {
     };
 
     private void startCommunication() {
-        voltageTimer = new Timer();
-//        rpmTimer = new Timer();
-        voltageTask = new CommandTask("ATRV");
-        voltageTimer.schedule(voltageTask, 500, 120);
-//        rpmTask = new CommandTask("01 0C");
-//        rpmTimer.schedule(rpmTask, 0);
+        timer = new Timer();
+        task = new CommandTask("01 0C");
+        timer.schedule(task, 500, 120);
     }
-
-    private Timer voltageTimer;
-//    private Timer rpmTimer;
-    private CommandTask voltageTask;
-//    private CommandTask rpmTask;
 
     public GraphDataFragment() {
         // Required empty public constructor
@@ -82,11 +64,12 @@ public class GraphDataFragment extends Fragment {
 
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_graph_data, container, false);
-        voltageGraph = (GraphView) view.findViewById(R.id.voltageGraph);
-//        rpmGraph = (GraphView) view.findViewById(R.id.rpmGraph);
+        graphView = view.findViewById(R.id.graphView);
+        graphView.setMin(0);
+        graphView.setMax(6000);
         return view;
     }
 
@@ -95,26 +78,26 @@ public class GraphDataFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        final MainActivity activity = (MainActivity) getActivity();
-        connected = activity.isDeviceCompatible();
-        activity.addOnBluetoothEventListener(listener);
-        if(connected) startCommunication();
+        if (getActivity() instanceof MainActivity) {
+            final MainActivity activity = ((MainActivity) getActivity());
+            connected = activity.isDeviceCompatible();
+            activity.addOnBluetoothEventListener(listener);
+        }
+        if (connected) startCommunication();
     }
 
     @Override
     public void onPause() {
-        ((MainActivity) getActivity()).removeOnBluetoothEventListener(listener);
+        if (getActivity() instanceof MainActivity)
+            ((MainActivity) getActivity()).removeOnBluetoothEventListener(listener);
         stopCommunication();
-        voltageTimer = null;
-//        rpmTimer = null;
-        voltageTask = null;
-//        rpmTask = null;
+        timer = null;
+        task = null;
         super.onPause();
     }
 
     private void stopCommunication() {
-        if(voltageTimer != null) voltageTimer.cancel();
-//        rpmTimer.cancel();
+        if (timer != null) timer.cancel();
     }
 
     private class CommandTask extends TimerTask{

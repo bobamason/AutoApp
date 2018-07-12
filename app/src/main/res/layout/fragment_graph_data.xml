@@ -12,7 +12,7 @@
         android:padding="10dp"
         android:layout_marginTop="28dp"
         android:layout_marginBottom="58dp"
-        android:id="@+id/voltageGraph"
+        android:id="@+id/graphView"
         app:graphColor="@color/colorAccent"
         app:lineColor="@color/graphLineColor"
         app:max="18"
@@ -20,7 +20,7 @@
         app:units="V"
         app:lineSpacing="3"
         app:numReadings="75"
-        app:label="Voltmeter"/>
+        app:label="RPM"/>
 
     <!--<org.masonapps.autoapp.views.GraphView-->
         <!--android:layout_width="match_parent"-->
