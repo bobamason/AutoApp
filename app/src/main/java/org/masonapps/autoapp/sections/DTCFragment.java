@@ -53,6 +53,7 @@ public class DTCFragment extends Fragment {
                     hideProgressBar();
                     try {
                         if (adapter != null) {
+                            adapter.clear();
                             adapter.addAll(ODB2Parser.parseTroubleCodes(line));
                         }
                     } catch (IllegalArgumentException e) {

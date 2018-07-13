@@ -12,7 +12,7 @@ public class ODB2Parser {
             "B0", "B1", "B2", "B3",
             "U0", "U1", "U2", "U3"};
 
-    public static final ArrayList<String> parseTroubleCodes(String response) throws IllegalArgumentException{
+    public static ArrayList<String> parseTroubleCodes(String response) throws IllegalArgumentException{
         final ArrayList<String> list = new ArrayList<>();
         final ArrayList<Byte> bytes = new ArrayList<>();
         String[] byteStrings = response.split("\\s");
