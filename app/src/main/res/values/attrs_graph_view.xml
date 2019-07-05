@@ -6,7 +6,7 @@
         <attr name="max" format="float"/>
         <attr name="min" format="float"/>
         <attr name="units" format="string"/>
-        <attr name="lineSpacing" format="float"/>
+        <attr name="gridSpacing" format="float"/>
         <attr name="label" format="string"/>
     </declare-styleable>
 </resources>

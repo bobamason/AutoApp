@@ -79,7 +79,7 @@ public class MainActivity extends BluetoothActivity
 
     private void connectToODB2Adapter() {
         final String savedAddress = PreferenceManager.getDefaultSharedPreferences(this).getString(KEY_DEVICE_ADDRESS, "");
-        final BluetoothDevice savedDevice = BluetoothService.getPairedDeviceByAddress(savedAddress);
+        final BluetoothDevice savedDevice = savedAddress.isEmpty() ? null : BluetoothService.getPairedDeviceByAddress(savedAddress);
         if (savedDevice != null) {
             setCurrentBtDevice(savedDevice);
         } else
@@ -93,9 +93,7 @@ public class MainActivity extends BluetoothActivity
 
     private void displayDisconnectDialog() {
         new AlertDialog.Builder(this)
-                .setPositiveButton(android.R.string.yes, (dialog, which) -> {
-
-                })
+                .setPositiveButton(android.R.string.yes, (dialog, which) -> disconnect())
                 .setNegativeButton(android.R.string.no, (dialog, which) -> dialog.dismiss())
                 .setTitle("Disconnect")
                 .setMessage("Are you sure you want to disconnect from the current device?")
@@ -127,17 +125,23 @@ public class MainActivity extends BluetoothActivity
 
     @Override
     public void connected() {
+        showToastLong("connected");
+        setProgressVisibility(false);
+        hideConnectButton();
         showDTCFragment();
         sendATCommand(ELM32X.COMMAND_INFO);
     }
 
     @Override
     public void connecting() {
+        showToastLong("connecting...");
         setProgressVisibility(true);
     }
 
     @Override
     public void disconnected() {
+        showToastLong("disconnected");
+        setProgressVisibility(false);
         showConnectButton();
         attemptToConnect();
         for (OnBluetoothEventListener listener : listeners) {
@@ -146,12 +150,12 @@ public class MainActivity extends BluetoothActivity
     }
 
     private void showConnectButton() {
-        connectButton.setVisibility(View.VISIBLE);
+        connectButton.show();
         connectButton.setImageDrawable(disconnectedDrawable);
     }
 
     private void hideConnectButton() {
-        connectButton.setVisibility(View.GONE);
+        connectButton.hide();
     }
 
     public void setProgressVisibility(boolean visible) {

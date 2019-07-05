@@ -18,6 +18,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -116,6 +117,18 @@ public abstract class BluetoothActivity extends AppCompatActivity {
         }
     }
 
+    public void showToastLong(String msg) {
+        showToast(msg, Toast.LENGTH_LONG);
+    }
+
+    public void showToastShort(String msg) {
+        showToast(msg, Toast.LENGTH_SHORT);
+    }
+
+    private void showToast(final String msg, final int duration) {
+        runOnUiThread(() -> Toast.makeText(BluetoothActivity.this, msg, duration).show());
+    }
+
     public void displayDeviceListDialog() {
         DialogFragment fragment = (DialogFragment) getSupportFragmentManager().findFragmentByTag(DEVICE_LIST_TAG);
         if (fragment != null) fragment.dismiss();
@@ -146,7 +159,7 @@ public abstract class BluetoothActivity extends AppCompatActivity {
     }
 
     public void setCurrentBtDevice(int index) {
-        if (index > 0 && index < devices.size())
+        if (index >= 0 && index < devices.size())
             setCurrentBtDevice(devices.get(index));
     }
 
@@ -156,6 +169,7 @@ public abstract class BluetoothActivity extends AppCompatActivity {
     }
 
     public void setCurrentBtDevice(BluetoothDevice device) {
+        showToastShort("setCurrentBtDevice(" + (device == null ? "null" : device.getName()) + ")");
         currentBtDevice = device;
         if (serviceBound) {
             try {
@@ -163,36 +177,47 @@ public abstract class BluetoothActivity extends AppCompatActivity {
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
+        } else {
+            showToastShort("service not bound");
         }
     }
 
     public void attemptToConnect() {
+        showToastShort("attemptToConnect()");
         if (serviceBound) {
             try {
                 btService.send(Message.obtain(null, BluetoothService.MESSAGE_CONNECT));
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
+        } else {
+            showToastShort("service not bound");
         }
     }
 
     public void disconnect() {
+        showToastShort("disconnect()");
         if (serviceBound) {
             try {
                 btService.send(Message.obtain(null, BluetoothService.MESSAGE_DISCONNECT));
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
+        } else {
+            showToastShort("service not bound");
         }
     }
 
     public boolean write(String line) {
+        showToastShort("writing to BT -> " + line);
         if (isConnected) {
             try {
                 btService.send(Message.obtain(null, BluetoothService.MESSAGE_WRITE, line));
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
+        } else {
+            showToastShort("service not connected");
         }
         return isConnected;
     }

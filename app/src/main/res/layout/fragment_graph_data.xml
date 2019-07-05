@@ -18,7 +18,7 @@
         app:max="18"
         app:min="0"
         app:units="V"
-        app:lineSpacing="3"
+        app:gridSpacing="3"
         app:numReadings="75"
         app:label="RPM"/>
 
@@ -33,7 +33,7 @@
         <!--app:max="10000"-->
         <!--app:min="0"-->
         <!--app:units="RPM"-->
-        <!--app:lineSpacing="1000"-->
+    <!--app:gridSpacing="1000"-->
         <!--app:numReadings="40"-->
         <!--app:label="Tachometer"/>-->
 </RelativeLayout>

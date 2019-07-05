@@ -79,7 +79,7 @@ public class GraphView extends View {
         lineColor = a.getColor(R.styleable.GraphView_lineColor, DEFAULT_LINE_COLOR);
         max = a.getFloat(R.styleable.GraphView_max, DEFAULT_MAX);
         min = a.getFloat(R.styleable.GraphView_min, DEFAULT_MIN);
-        lineSpacing = a.getFloat(R.styleable.GraphView_lineSpacing, DEFAULT_LINE_SPACING);
+        lineSpacing = a.getFloat(R.styleable.GraphView_gridSpacing, DEFAULT_LINE_SPACING);
         units = a.getString(R.styleable.GraphView_units);
         label = a.getString(R.styleable.GraphView_label);
         a.recycle();
