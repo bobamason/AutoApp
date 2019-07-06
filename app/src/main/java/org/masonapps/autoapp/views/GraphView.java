@@ -208,6 +208,14 @@ public class GraphView extends View {
         invalidate();
     }
 
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public void setUnits(String units) {
+        this.units = units;
+    }
+
     public int getLineColor() {
         return lineColor;
     }

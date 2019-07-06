@@ -4,6 +4,7 @@ package org.masonapps.autoapp.sections;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,19 +24,27 @@ public class GraphDataFragment extends Fragment {
     private CommandTask task;
     private GraphView graphView;
     private boolean connected = false;
-    
+
     private final BluetoothActivity.OnBluetoothEventListener listener = new BluetoothActivity.OnBluetoothEventListener() {
         @Override
         public void onReadLine(String line) {
-            if (line.toUpperCase().contains("0C")) {
-                try{
+            Log.d("graph data", "line = " + line);
+            try {
+                graphView.setLabel("raw data = " + line);
+                if (line.toUpperCase().contains("11")) {
                     line = line.replaceAll("\\s", "");
                     if (line.length() > 4) {
-                        final int value = Math.round(Integer.parseInt(line.substring(line.length() - 4), 16) / 4f);
-                        graphView.updateValue(value);
+                        final int rawValue = Integer.parseInt(line.substring(4, 6), 16);
+                        Log.d("graph data", "rawValue = " + rawValue);
+                        final float value = rawValue / 255f * 100f;
+//                        final float value = rawValue * 3f;
+                        Log.d("graph data", "value = " + value);
+                        graphView.updateValue(Math.round(value));
                     }
-                }catch (NumberFormatException ignored){}
-                timer.schedule(task, 50);
+                }
+                timer.schedule(task, 500);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
@@ -54,8 +63,9 @@ public class GraphDataFragment extends Fragment {
 
     private void startCommunication() {
         timer = new Timer();
-        task = new CommandTask("01 0C");
-        timer.schedule(task, 500, 120);
+        task = new CommandTask("0111");
+//        task = new CommandTask("010A");
+        timer.schedule(task, 500);
     }
 
     public GraphDataFragment() {
@@ -68,11 +78,13 @@ public class GraphDataFragment extends Fragment {
                              Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_graph_data, container, false);
         graphView = view.findViewById(R.id.graphView);
-        graphView.setMin(0);
-        graphView.setMax(6000);
+        graphView.setMin(0f);
+        graphView.setMax(100f);
+        graphView.setUnits("%");
+        graphView.setLabel("Throttle Position");
+//        graphView.setLabel("Fuel Pressure");
         return view;
     }
-
 
 
     @Override
@@ -100,7 +112,7 @@ public class GraphDataFragment extends Fragment {
         if (timer != null) timer.cancel();
     }
 
-    private class CommandTask extends TimerTask{
+    private class CommandTask extends TimerTask {
 
         private final String command;
 
@@ -111,7 +123,12 @@ public class GraphDataFragment extends Fragment {
 
         @Override
         public void run() {
-            ((MainActivity)getActivity()).write(command + "\r\n");
+            try {
+                if (getActivity() instanceof BluetoothActivity)
+                    ((BluetoothActivity) getActivity()).write(command + "\r\n");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

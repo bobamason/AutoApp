@@ -82,8 +82,9 @@ public class MainActivity extends BluetoothActivity
         final BluetoothDevice savedDevice = savedAddress.isEmpty() ? null : BluetoothService.getPairedDeviceByAddress(savedAddress);
         if (savedDevice != null) {
             setCurrentBtDevice(savedDevice);
-        } else
-            displayDeviceListDialog();
+        }
+
+        displayDeviceListDialog();
     }
 
     @Override

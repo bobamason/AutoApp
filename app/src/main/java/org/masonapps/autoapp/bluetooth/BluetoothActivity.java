@@ -209,7 +209,7 @@ public abstract class BluetoothActivity extends AppCompatActivity {
     }
 
     public boolean write(String line) {
-        showToastShort("writing to BT -> " + line);
+//        showToastShort("writing to BT -> " + line);
         if (isConnected) {
             try {
                 btService.send(Message.obtain(null, BluetoothService.MESSAGE_WRITE, line));
